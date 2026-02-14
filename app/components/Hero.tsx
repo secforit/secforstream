@@ -41,9 +41,7 @@ export default function Hero() {
           </a>
 
           <a
-            href="/WHITEPAPER.md"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/whitepaper"
             className="px-8 py-4 rounded-lg font-semibold text-white border-2 border-red-600/50 hover:border-red-600 hover:bg-red-600/10 transition-all duration-300"
           >
             View Whitepaper

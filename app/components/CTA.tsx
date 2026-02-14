@@ -40,15 +40,15 @@ export default function CTA() {
 
         {/* Additional Links */}
         <div className="flex flex-wrap justify-center gap-6 text-sm">
-          <a href="/WHITEPAPER.md" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors flex items-center gap-2">
+          <a href="/whitepaper" className="text-gray-400 hover:text-white transition-colors flex items-center gap-2">
             <span>📄</span>
             Full Whitepaper
           </a>
-          <a href="/EXECUTIVE-SUMMARY.md" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors flex items-center gap-2">
+          <a href="/executive-summary" className="text-gray-400 hover:text-white transition-colors flex items-center gap-2">
             <span>📋</span>
             Executive Summary
           </a>
-          <a href="/PITCH-DECK.md" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors flex items-center gap-2">
+          <a href="/pitch-deck" className="text-gray-400 hover:text-white transition-colors flex items-center gap-2">
             <span>📊</span>
             Pitch Deck
           </a>

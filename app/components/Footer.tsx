@@ -3,7 +3,7 @@ export default function Footer() {
     product: [
       { label: 'About', href: '#about' },
       { label: 'How It Works', href: '#how' },
-      { label: 'Whitepaper', href: '/WHITEPAPER.md', external: true },
+      { label: 'Whitepaper', href: '/whitepaper' },
       { label: 'Documentation', href: '/DOCS-INDEX.md', external: true }
     ],
     community: [
@@ -13,8 +13,8 @@ export default function Footer() {
       { label: 'GitHub', href: '#github' }
     ],
     resources: [
-      { label: 'Executive Summary', href: '/EXECUTIVE-SUMMARY.md', external: true },
-      { label: 'Pitch Deck', href: '/PITCH-DECK.md', external: true },
+      { label: 'Executive Summary', href: '/executive-summary' },
+      { label: 'Pitch Deck', href: '/pitch-deck' },
       { label: 'Branding Guide', href: '/BRANDING.md', external: true },
       { label: 'Contact', href: 'mailto:hello@secforit.com' }
     ],

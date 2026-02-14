@@ -6,7 +6,7 @@ export default function Documentation() {
       icon: '📄',
       pages: '40+ pages',
       time: '30-45 min read',
-      href: '/WHITEPAPER.md',
+      href: '/whitepaper',
       color: 'from-red-600 to-rose-600'
     },
     {
@@ -15,7 +15,7 @@ export default function Documentation() {
       icon: '📋',
       pages: '8 pages',
       time: '5-10 min read',
-      href: '/EXECUTIVE-SUMMARY.md',
+      href: '/executive-summary',
       color: 'from-rose-600 to-pink-600'
     },
     {
@@ -24,7 +24,7 @@ export default function Documentation() {
       icon: '📊',
       pages: '20 slides',
       time: '10 min read',
-      href: '/PITCH-DECK.md',
+      href: '/pitch-deck',
       color: 'from-orange-600 to-red-600'
     },
     {
@@ -57,8 +57,7 @@ export default function Documentation() {
             <a
               key={index}
               href={doc.href}
-              target="_blank"
-              rel="noopener noreferrer"
+              {...(doc.href.startsWith('/DOCS-INDEX') || doc.href.startsWith('/BRANDING') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
               className="group relative p-8 rounded-2xl bg-slate-800/50 border border-slate-700 hover:border-red-500/50 transition-all duration-300 hover:scale-105"
             >
               {/* Gradient Glow */}
@@ -135,17 +134,13 @@ export default function Documentation() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href="/EXECUTIVE-SUMMARY.md"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/executive-summary"
               className="px-6 py-3 bg-gradient-to-r from-red-600 to-rose-600 rounded-lg font-semibold text-white hover:shadow-lg hover:shadow-red-500/50 transition-all duration-300"
             >
               Quick Start (5 min)
             </a>
             <a
-              href="/WHITEPAPER.md"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/whitepaper"
               className="px-6 py-3 rounded-lg font-semibold text-white border-2 border-red-500/50 hover:border-red-500 hover:bg-red-500/10 transition-all duration-300"
             >
               Deep Dive (45 min)
