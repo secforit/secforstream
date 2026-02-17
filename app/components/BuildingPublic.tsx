@@ -1,9 +1,48 @@
+'use client'
+
+import useSWR from 'swr'
+import type { TokenData, HolderData, BondingCurveData } from '@/app/types/token'
+
+const fetcher = async (url: string) => {
+  const res = await fetch(url)
+  const data = await res.json()
+  if (!res.ok || data.error) throw new Error(data.error)
+  return data
+}
+
 export default function BuildingPublic() {
+  const { data: tokenData } = useSWR<TokenData>('/api/token/data', fetcher, { refreshInterval: 30_000 })
+  const { data: holderData } = useSWR<HolderData>('/api/token/holders', fetcher, { refreshInterval: 60_000 })
+  const { data: bondingData } = useSWR<BondingCurveData>('/api/token/bonding-curve', fetcher, { refreshInterval: 30_000 })
+
+  const totalTxns = tokenData ? tokenData.transactions.buys24h + tokenData.transactions.sells24h : null
+  const holders = holderData?.topHolders?.length ?? null
+  const bondingProgress = bondingData?.progress ?? null
+  const volume = tokenData?.market.volume24h ?? null
+
   const metrics = [
-    { value: '50+', label: 'Challenges Run', icon: '⚡' },
-    { value: '30+', label: 'Participants', icon: '👥' },
-    { value: '10+', label: 'Trust Scores', icon: '🏆' },
-    { value: '6', label: 'Livestreams', icon: '🎥' }
+    {
+      value: totalTxns !== null ? totalTxns.toLocaleString() : '—',
+      label: 'Transactions 24h',
+      icon: '⚡',
+    },
+    {
+      value: holders !== null ? `${holders}+` : '—',
+      label: 'Token Holders',
+      icon: '👥',
+    },
+    {
+      value: bondingProgress !== null ? `${bondingProgress.toFixed(1)}%` : '—',
+      label: 'Bonding Curve',
+      icon: '📈',
+    },
+    {
+      value: volume !== null
+        ? volume >= 1000 ? `$${(volume / 1000).toFixed(1)}K` : `$${volume.toFixed(0)}`
+        : '—',
+      label: 'Volume 24h',
+      icon: '💰',
+    },
   ]
 
   return (
@@ -15,7 +54,7 @@ export default function BuildingPublic() {
             Building in Public
           </h2>
           <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            We're proving SECforSTREAM works in real-time. Join our streams, participate in challenges, and see verification in action.
+            Real on-chain data. No mock numbers. Every metric pulled directly from Solana and DexScreener.
           </p>
         </div>
 
@@ -82,7 +121,7 @@ export default function BuildingPublic() {
               <svg className="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
-              <span className="text-sm text-gray-300">All metrics updated in real-time • 100% transparent</span>
+              <span className="text-sm text-gray-300">All metrics from on-chain data • Auto-refreshing</span>
             </div>
           </div>
         </div>

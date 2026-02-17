@@ -49,9 +49,9 @@ function isAllowedOrigin(origin: string | null): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Middleware
+// Proxy (Next.js 16 convention, replaces middleware)
 // ---------------------------------------------------------------------------
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isApiRoute = pathname.startsWith('/api/');
 

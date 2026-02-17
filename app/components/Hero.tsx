@@ -1,4 +1,20 @@
+'use client'
+
+import useSWR from 'swr'
+import type { TokenData } from '@/app/types/token'
+
+const fetcher = async (url: string) => {
+  const res = await fetch(url)
+  const data = await res.json()
+  if (!res.ok || data.error) throw new Error(data.error)
+  return data
+}
+
 export default function Hero() {
+  const { data: tokenData } = useSWR<TokenData>('/api/token/data', fetcher, { refreshInterval: 30_000 })
+
+  const totalTxns = tokenData ? tokenData.transactions.buys24h + tokenData.transactions.sells24h : null
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden px-4">
       {/* Animated Background */}
@@ -48,13 +64,16 @@ export default function Hero() {
           </a>
         </div>
 
-        {/* Trust Badge */}
+        {/* Live Stats Badge */}
         <div className="mt-16 inline-flex items-center gap-3 px-6 py-3 rounded-full bg-slate-800/50 backdrop-blur-sm border border-slate-700">
           <svg className="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
           </svg>
           <span className="text-sm text-gray-300">
-            <span className="font-semibold text-white">50+ challenges</span> completed in real-time
+            <span className="font-semibold text-white">
+              {totalTxns !== null ? `${totalTxns.toLocaleString()} transactions` : 'Loading...'}
+            </span>
+            {' '}in the last 24h
           </span>
         </div>
       </div>
