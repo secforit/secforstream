@@ -52,9 +52,9 @@ export default function CTA() {
             <span>📊</span>
             Pitch Deck
           </a>
-          <a href="#" className="text-gray-400 hover:text-white transition-colors flex items-center gap-2">
+          <a href="/dashboard" className="text-gray-400 hover:text-white transition-colors flex items-center gap-2">
             <span>🚀</span>
-            Token (Coming Soon)
+            Token Dashboard
           </a>
         </div>
 

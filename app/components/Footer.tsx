@@ -4,7 +4,8 @@ export default function Footer() {
       { label: 'About', href: '#about' },
       { label: 'How It Works', href: '#how' },
       { label: 'Whitepaper', href: '/whitepaper' },
-      { label: 'Documentation', href: '/DOCS-INDEX.md', external: true }
+      { label: 'Documentation', href: '/DOCS-INDEX.md', external: true },
+      { label: 'Token Dashboard', href: '/dashboard' }
     ],
     community: [
       { label: 'Discord', href: '#discord' },
