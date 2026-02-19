@@ -16,13 +16,13 @@ export default function CTA() {
         </p>
 
         {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
           <a
-            href="#discord"
+            href="/verify"
             className="group relative px-10 py-5 bg-gradient-to-r from-red-600 to-rose-600 rounded-xl font-bold text-lg text-white hover:shadow-2xl hover:shadow-red-600/50 transition-all duration-300 hover:scale-105"
           >
             <span className="relative z-10 flex items-center gap-2">
-              Join Discord Community
+              Start Verification
               <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
@@ -31,8 +31,23 @@ export default function CTA() {
           </a>
 
           <a
-            href="#twitter"
+            href="/validate"
             className="px-10 py-5 rounded-xl font-bold text-lg text-white border-2 border-red-600/50 hover:border-red-600 hover:bg-red-600/10 transition-all duration-300"
+          >
+            Validate Streams
+          </a>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+          <a
+            href="#discord"
+            className="px-8 py-3 rounded-lg font-semibold text-sm text-gray-300 border border-slate-700 hover:border-slate-600 hover:bg-slate-800/50 transition-all duration-300"
+          >
+            Join Discord Community
+          </a>
+          <a
+            href="#twitter"
+            className="px-8 py-3 rounded-lg font-semibold text-sm text-gray-300 border border-slate-700 hover:border-slate-600 hover:bg-slate-800/50 transition-all duration-300"
           >
             Follow on X
           </a>

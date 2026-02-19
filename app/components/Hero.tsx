@@ -47,21 +47,32 @@ export default function Hero() {
         </p>
 
         {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-4">
           <a
-            href="#discord"
+            href="/verify"
             className="group relative px-8 py-4 bg-gradient-to-r from-red-600 to-rose-600 rounded-lg font-semibold text-white hover:shadow-lg hover:shadow-red-600/50 transition-all duration-300 hover:scale-105"
           >
-            <span className="relative z-10">Join Discord</span>
+            <span className="relative z-10 flex items-center gap-2">
+              Start Verification
+              <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+            </span>
             <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-rose-600 rounded-lg blur opacity-0 group-hover:opacity-50 transition-opacity" />
           </a>
 
           <a
-            href="/whitepaper"
+            href="/validate"
             className="px-8 py-4 rounded-lg font-semibold text-white border-2 border-red-600/50 hover:border-red-600 hover:bg-red-600/10 transition-all duration-300"
           >
-            View Whitepaper
+            Validate Streams
           </a>
+        </div>
+
+        <div className="flex gap-4 justify-center items-center">
+          <a href="/whitepaper" className="text-sm text-gray-400 hover:text-white transition-colors">Whitepaper</a>
+          <span className="text-gray-600">•</span>
+          <a href="/dashboard" className="text-sm text-gray-400 hover:text-white transition-colors">Dashboard</a>
+          <span className="text-gray-600">•</span>
+          <a href="#discord" className="text-sm text-gray-400 hover:text-white transition-colors">Discord</a>
         </div>
 
         {/* Live Stats Badge */}

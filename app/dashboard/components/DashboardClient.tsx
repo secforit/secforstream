@@ -8,6 +8,7 @@ import BondingCurveProgress from './BondingCurveProgress';
 import MarketStats from './MarketStats';
 import HolderDistribution from './HolderDistribution';
 import TradeFeed from './TradeFeed';
+import BubbleMap from './BubbleMap';
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);
@@ -102,12 +103,15 @@ export default function DashboardClient() {
         <TradeFeed trades={trades} isConnected={isConnected} />
       </div>
 
+      {/* Row 4: Bubble Map (full width) */}
+      <BubbleMap />
+
       {/* Last updated */}
       {tokenData && (
         <div className="text-center">
           <span className="text-xs text-gray-500">
             Last updated: {new Date(tokenData.updatedAt).toLocaleTimeString()}
-            {' '}• Auto-refreshing every 15s
+            {' '}•{' '}Auto-refreshing every 15s
           </span>
         </div>
       )}
