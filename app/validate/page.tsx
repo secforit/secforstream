@@ -2,8 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { useAuth } from '../providers/AuthProvider';
 
-const API = '/api';
+const API = process.env.NEXT_PUBLIC_API_URL || '';
 
 interface Challenge {
   challengeId: string;
@@ -28,8 +31,10 @@ interface VoteState {
 type PageState = 'wallet' | 'challenges' | 'voting' | 'confirmed';
 
 export default function ValidatePage() {
+  const { connected } = useWallet();
+  const { wallet, isAuthenticated, isAuthenticating } = useAuth();
+
   const [pageState, setPageState] = useState<PageState>('wallet');
-  const [walletAddress, setWalletAddress] = useState('');
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
   const [voteReason, setVoteReason] = useState('');
@@ -37,21 +42,26 @@ export default function ValidatePage() {
   const [error, setError] = useState('');
   const [voteState, setVoteState] = useState<VoteState | null>(null);
 
-  // Generate a demo Solana-style wallet address
-  const connectWallet = () => {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz123456789';
-    const addr = Array.from({ length: 44 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-    setWalletAddress(addr);
-    setPageState('challenges');
-    fetchActiveChallenges();
-  };
+  // Move to challenges once authenticated
+  useEffect(() => {
+    if (isAuthenticated && pageState === 'wallet') {
+      setPageState('challenges');
+    }
+    if (!connected && pageState !== 'wallet') {
+      setPageState('wallet');
+      setChallenges([]);
+      setSelectedChallenge(null);
+      setVoteState(null);
+      setError('');
+    }
+  }, [isAuthenticated, connected, pageState]);
 
   // Fetch active challenges from backend
   const fetchActiveChallenges = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`${API}/challenges/active`);
+      const res = await fetch(`${API}/api/challenges/active`);
       if (!res.ok) throw new Error('Failed to fetch challenges');
       const data = await res.json();
       setChallenges(Array.isArray(data) ? data : data.challenges || []);
@@ -71,19 +81,19 @@ export default function ValidatePage() {
     return () => clearInterval(interval);
   }, [pageState, fetchActiveChallenges]);
 
-  // Submit vote via POST /responses (matches backend route)
+  // Submit vote
   const handleSubmitVote = async (votePass: boolean) => {
-    if (!selectedChallenge || !walletAddress) return;
+    if (!selectedChallenge || !wallet) return;
     setLoading(true);
     setError('');
 
     try {
-      const res = await fetch(`${API}/responses`, {
+      const res = await fetch(`${API}/api/responses`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           challengeId: selectedChallenge.challengeId,
-          voterAddress: walletAddress,
+          voterAddress: wallet,
           approved: votePass,
           confidence: 0.85,
           reason: voteReason || undefined,
@@ -102,7 +112,6 @@ export default function ValidatePage() {
       });
       setPageState('confirmed');
 
-      // Refresh challenges after a moment
       setTimeout(fetchActiveChallenges, 1000);
     } catch (err: any) {
       setError(err.message || 'Failed to submit vote');
@@ -112,7 +121,7 @@ export default function ValidatePage() {
   };
 
   const truncate = (addr: string) => `${addr.slice(0, 4)}...${addr.slice(-4)}`;
-  const stars = (n: number) => '★'.repeat(n) + '☆'.repeat(5 - n);
+  const stars = (n: number) => '\u2605'.repeat(n) + '\u2606'.repeat(5 - n);
   const fmtTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   const typeColors: Record<string, string> = {
@@ -135,13 +144,16 @@ export default function ValidatePage() {
           <h1 className="text-xl font-bold bg-gradient-to-r from-white via-red-200 to-rose-200 bg-clip-text text-transparent">
             Validate Challenges
           </h1>
-          {walletAddress && <span className="text-sm text-gray-400 font-mono">{truncate(walletAddress)}</span>}
+          <div className="flex items-center gap-3">
+            {wallet && <span className="text-sm text-gray-400 font-mono hidden sm:inline">{truncate(wallet)}</span>}
+            {connected && <WalletMultiButton style={{ height: '36px', fontSize: '14px' }} />}
+          </div>
         </div>
       </header>
 
       <div className="max-w-5xl mx-auto px-4 py-12">
 
-        {/* ── Connect Wallet ── */}
+        {/* Connect Wallet */}
         {pageState === 'wallet' && (
           <div className="text-center space-y-8">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/20">
@@ -152,13 +164,18 @@ export default function ValidatePage() {
             <p className="text-gray-400 max-w-lg mx-auto">
               Connect your wallet to review active stream challenges. Vote on whether streamers are human and earn rewards for honest participation.
             </p>
-            <button onClick={connectWallet} className="px-8 py-4 bg-gradient-to-r from-red-600 to-rose-600 rounded-lg font-semibold text-white hover:shadow-lg hover:shadow-red-600/50 transition-all duration-300 hover:scale-105">
-              Connect Wallet (Demo)
-            </button>
+            {isAuthenticating ? (
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                <p className="text-gray-400">Signing authentication message...</p>
+              </div>
+            ) : (
+              <WalletMultiButton style={{ margin: '0 auto', height: '48px', fontSize: '16px', borderRadius: '8px' }} />
+            )}
           </div>
         )}
 
-        {/* ── Challenges Grid ── */}
+        {/* Challenges Grid */}
         {pageState === 'challenges' && (
           <div className="space-y-8">
             {error && (
@@ -208,18 +225,15 @@ export default function ValidatePage() {
                       onClick={() => { setSelectedChallenge(challenge); setPageState('voting'); setVoteReason(''); setError(''); }}
                       className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-6 hover:border-red-600/50 cursor-pointer transition-all duration-200 space-y-4 group">
 
-                      {/* Streamer */}
                       <div className="flex items-center justify-between">
                         <span className="text-gray-400 text-sm">Streamer</span>
                         <span className="text-white font-mono text-sm">{truncate(challenge.streamerAddress)}</span>
                       </div>
 
-                      {/* Challenge Prompt */}
                       <h3 className="text-white font-semibold text-lg leading-snug line-clamp-2">
                         {challenge.prompt}
                       </h3>
 
-                      {/* Type + Difficulty */}
                       <div className="flex items-center justify-between">
                         <span className={`px-3 py-1 rounded-full text-xs font-medium border ${typeColors[challenge.type] || 'bg-slate-700 text-gray-300 border-slate-600'}`}>
                           {challenge.type.charAt(0).toUpperCase() + challenge.type.slice(1)}
@@ -227,7 +241,6 @@ export default function ValidatePage() {
                         <span className="text-yellow-400 text-sm">{stars(challenge.difficulty)}</span>
                       </div>
 
-                      {/* Time + Status */}
                       <div className="flex items-center justify-between pt-4 border-t border-slate-700">
                         <div className="flex items-center gap-2 text-gray-400">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -236,7 +249,6 @@ export default function ValidatePage() {
                         <span className="text-xs px-2 py-1 rounded bg-green-500/10 text-green-400 border border-green-500/20">Active</span>
                       </div>
 
-                      {/* CTA */}
                       <button className="w-full py-2.5 bg-gradient-to-r from-red-600/20 to-rose-600/20 border border-red-600/40 text-red-300 rounded-lg group-hover:from-red-600/30 group-hover:to-rose-600/30 transition-colors font-semibold text-sm">
                         Cast Your Vote
                       </button>
@@ -248,10 +260,9 @@ export default function ValidatePage() {
           </div>
         )}
 
-        {/* ── Voting Interface ── */}
+        {/* Voting Interface */}
         {pageState === 'voting' && selectedChallenge && (
           <div className="max-w-2xl mx-auto space-y-6">
-            {/* Challenge Details */}
             <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-8 space-y-6">
               <div className="flex items-center gap-3">
                 <span className={`px-3 py-1 rounded-full text-sm font-medium border ${typeColors[selectedChallenge.type] || 'bg-slate-700 text-gray-300'}`}>
@@ -271,7 +282,6 @@ export default function ValidatePage() {
               </div>
             </div>
 
-            {/* Vote Form */}
             <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-8 space-y-6">
               <h3 className="text-xl font-semibold text-white flex items-center gap-2">
                 <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -289,7 +299,6 @@ export default function ValidatePage() {
                 <div className="bg-red-900/30 border border-red-700/50 rounded-lg p-3 text-red-300 text-sm">{error}</div>
               )}
 
-              {/* Vote Buttons */}
               <div className="grid grid-cols-2 gap-4">
                 <button onClick={() => handleSubmitVote(true)} disabled={loading}
                   className="py-3.5 px-6 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2">
@@ -311,7 +320,7 @@ export default function ValidatePage() {
           </div>
         )}
 
-        {/* ── Vote Confirmed ── */}
+        {/* Vote Confirmed */}
         {pageState === 'confirmed' && voteState && (
           <div className="max-w-2xl mx-auto space-y-8">
             <div className={`rounded-xl p-12 text-center border ${voteState.votePass
@@ -319,7 +328,7 @@ export default function ValidatePage() {
               : 'bg-gradient-to-br from-red-900/20 to-rose-900/20 border-red-700/50'}`}>
 
               <div className={`text-7xl mb-4 ${voteState.votePass ? 'text-green-400' : 'text-red-400'}`}>
-                {voteState.votePass ? '✓' : '✗'}
+                {voteState.votePass ? '\u2713' : '\u2717'}
               </div>
 
               <h2 className={`text-3xl font-bold mb-3 ${voteState.votePass ? 'text-green-400' : 'text-red-400'}`}>

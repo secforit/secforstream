@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { useAuth } from '../providers/AuthProvider';
 
-const API = '/api';
-
-// Demo JWT (in real app, this comes from wallet signature auth)
-const DEMO_JWT = 'demo-mode';
+const API = process.env.NEXT_PUBLIC_API_URL || '';
 
 type PageState = 'wallet' | 'staking' | 'challenge' | 'result';
 
@@ -30,8 +30,10 @@ interface StatusData {
 }
 
 export default function VerifyPage() {
+  const { connected } = useWallet();
+  const { jwt, wallet, isAuthenticated, isAuthenticating } = useAuth();
+
   const [state, setState] = useState<PageState>('wallet');
-  const [wallet, setWallet] = useState('');
   const [stakeAmount, setStakeAmount] = useState(100);
   const [challenge, setChallenge] = useState<ChallengeData | null>(null);
   const [status, setStatus] = useState<StatusData | null>(null);
@@ -40,29 +42,38 @@ export default function VerifyPage() {
   const [error, setError] = useState('');
   const [result, setResult] = useState<{ passed: boolean; score: number; tier: string } | null>(null);
 
-  const connectWallet = () => {
-    const addr = Array.from({ length: 44 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz123456789'[Math.floor(Math.random() * 58)]).join('');
-    setWallet(addr);
-    setState('staking');
-  };
+  // Move to staking step once authenticated
+  useEffect(() => {
+    if (isAuthenticated && state === 'wallet') {
+      setState('staking');
+    }
+    if (!connected && state !== 'wallet') {
+      setState('wallet');
+      setChallenge(null);
+      setStatus(null);
+      setResult(null);
+      setError('');
+    }
+  }, [isAuthenticated, connected, state]);
 
   const startVerification = async () => {
+    if (!jwt || !wallet) return;
     setLoading(true);
     setError('');
     try {
       // Create session
-      const sessRes = await fetch(`${API}/sessions/start`, {
+      const sessRes = await fetch(`${API}/api/sessions/start`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${DEMO_JWT}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${jwt}` },
         body: JSON.stringify({ stakeAmount, stakeTx: 'demo-tx-' + Date.now(), streamerAddress: wallet }),
       });
       const sessData = await sessRes.json();
       if (!sessRes.ok) throw new Error(sessData.error || 'Failed to create session');
 
       // Generate challenge
-      const chalRes = await fetch(`${API}/challenges`, {
+      const chalRes = await fetch(`${API}/api/challenges`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${DEMO_JWT}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${jwt}` },
         body: JSON.stringify({ sessionId: sessData.sessionId, streamerAddress: wallet }),
       });
       const chalData = await chalRes.json();
@@ -82,18 +93,15 @@ export default function VerifyPage() {
   const pollStatus = useCallback(async () => {
     if (!challenge) return;
     try {
-      const res = await fetch(`${API}/challenges/${challenge.challengeId}/status`);
+      const res = await fetch(`${API}/api/challenges/${challenge.challengeId}/status`);
       const data = await res.json();
       setStatus(data);
 
-      // Check if consensus finalized
       if (data.minVotesMet) {
-        // Check challenge details for final result
-        const chalRes = await fetch(`${API}/challenges/${challenge.challengeId}`);
+        const chalRes = await fetch(`${API}/api/challenges/${challenge.challengeId}`);
         const chalData = await chalRes.json();
         if (chalData.consensus) {
-          // Fetch trust score
-          const trustRes = await fetch(`${API}/trust/${wallet}`);
+          const trustRes = await fetch(`${API}/api/trust/${wallet}`);
           const trustData = trustRes.ok ? await trustRes.json() : null;
 
           setResult({
@@ -120,7 +128,7 @@ export default function VerifyPage() {
     return () => clearInterval(t);
   }, [state, timeLeft]);
 
-  const stars = (n: number) => '★'.repeat(n) + '☆'.repeat(5 - n);
+  const stars = (n: number) => '\u2605'.repeat(n) + '\u2606'.repeat(5 - n);
   const fmtTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   const typeColors: Record<string, string> = {
@@ -143,13 +151,16 @@ export default function VerifyPage() {
           <h1 className="text-xl font-bold bg-gradient-to-r from-white via-red-200 to-rose-200 bg-clip-text text-transparent">
             Verify Your Stream
           </h1>
-          {wallet && <span className="text-sm text-gray-400 font-mono">{wallet.slice(0, 4)}...{wallet.slice(-4)}</span>}
+          <div className="flex items-center gap-3">
+            {wallet && <span className="text-sm text-gray-400 font-mono hidden sm:inline">{wallet.slice(0, 4)}...{wallet.slice(-4)}</span>}
+            {connected && <WalletMultiButton style={{ height: '36px', fontSize: '14px' }} />}
+          </div>
         </div>
       </header>
 
       <div className="max-w-4xl mx-auto px-4 py-12">
 
-        {/* ── Connect Wallet ── */}
+        {/* Connect Wallet */}
         {state === 'wallet' && (
           <div className="text-center space-y-8">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/20">
@@ -158,15 +169,20 @@ export default function VerifyPage() {
             </div>
             <h2 className="text-4xl font-bold text-white">Connect Your Wallet to Begin</h2>
             <p className="text-gray-400 max-w-lg mx-auto">
-              Stake $SECS tokens to initiate a verification session. Complete a challenge to prove you're human and build your trust score.
+              Stake $SECS tokens to initiate a verification session. Complete a challenge to prove you&apos;re human and build your trust score.
             </p>
-            <button onClick={connectWallet} className="px-8 py-4 bg-gradient-to-r from-red-600 to-rose-600 rounded-lg font-semibold text-white hover:shadow-lg hover:shadow-red-600/50 transition-all duration-300 hover:scale-105">
-              Connect Wallet (Demo)
-            </button>
+            {isAuthenticating ? (
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                <p className="text-gray-400">Signing authentication message...</p>
+              </div>
+            ) : (
+              <WalletMultiButton style={{ margin: '0 auto', height: '48px', fontSize: '16px', borderRadius: '8px' }} />
+            )}
           </div>
         )}
 
-        {/* ── Staking Form ── */}
+        {/* Staking Form */}
         {state === 'staking' && (
           <div className="max-w-lg mx-auto space-y-6">
             <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-8 space-y-6">
@@ -196,7 +212,7 @@ export default function VerifyPage() {
           </div>
         )}
 
-        {/* ── Challenge Active ── */}
+        {/* Challenge Active */}
         {state === 'challenge' && challenge && (
           <div className="space-y-6">
             {/* Challenge Card */}
@@ -265,12 +281,12 @@ export default function VerifyPage() {
           </div>
         )}
 
-        {/* ── Result ── */}
+        {/* Result */}
         {state === 'result' && result && (
           <div className="space-y-6">
             <div className={`rounded-xl p-12 text-center border ${result.passed ? 'bg-gradient-to-br from-green-900/20 to-emerald-900/20 border-green-700/50' : 'bg-gradient-to-br from-red-900/20 to-rose-900/20 border-red-700/50'}`}>
               <div className={`text-7xl mb-4 ${result.passed ? 'text-green-400' : 'text-red-400'}`}>
-                {result.passed ? '✓' : '✗'}
+                {result.passed ? '\u2713' : '\u2717'}
               </div>
               <h2 className={`text-4xl font-bold mb-3 ${result.passed ? 'text-green-400' : 'text-red-400'}`}>
                 {result.passed ? 'Verification Passed!' : 'Verification Failed'}
